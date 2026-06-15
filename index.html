@@ -19,7 +19,6 @@ body{
     justify-content:center;
     align-items:center;
     padding:20px;
-
     background:linear-gradient(
         135deg,
         #ff6b6b,
@@ -47,7 +46,8 @@ h1{
 
 .instruction{
     margin-bottom:20px;
-    line-height:1.5;
+    line-height:1.6;
+    font-size:1rem;
 }
 
 .highlight{
@@ -58,17 +58,12 @@ h1{
 #reactionBox{
     width:min(80vw,350px);
     height:min(80vw,350px);
-
     margin:20px auto;
-
     background:#3498db;
     border-radius:20px;
-
     display:none;
-
     cursor:pointer;
-
-    transition:0.3s;
+    transition:0.2s;
 }
 
 button{
@@ -78,10 +73,8 @@ button{
     font-size:1rem;
     font-weight:bold;
     cursor:pointer;
-
     background:#2ecc71;
     color:white;
-
     transition:.3s;
 }
 
@@ -110,9 +103,16 @@ button:hover{
 }
 
 #rating{
-    margin-top:15px;
+    margin-top:20px;
     font-size:1.2rem;
     font-weight:bold;
+}
+
+#status{
+    margin-top:10px;
+    font-size:1rem;
+    font-weight:bold;
+    color:#666;
 }
 
 @media(max-width:500px){
@@ -137,7 +137,8 @@ button:hover{
     <p class="instruction">
         Wait until the box turns
         <span class="highlight">GREEN</span>
-        and tap it as fast as possible!
+        then click the box, tap the box, or press the
+        <strong>SPACEBAR</strong> as fast as possible!
     </p>
 
     <button id="startButton">Start Game</button>
@@ -155,6 +156,7 @@ button:hover{
     </div>
 
     <div id="rating"></div>
+    <div id="status"></div>
 
     <br>
 
@@ -171,15 +173,14 @@ const reactionBox = document.getElementById("reactionBox");
 const bestTimeDisplay = document.getElementById("bestTime");
 const reactionTimeDisplay = document.getElementById("reactionTime");
 const ratingDisplay = document.getElementById("rating");
+const statusDisplay = document.getElementById("status");
 
 let gameStarted = false;
-let canClick = false;
-
+let canReact = false;
 let startTime;
 let timeout;
 
 let bestTime = localStorage.getItem("bestTime") || 0;
-
 bestTimeDisplay.textContent = bestTime;
 
 function startGame(){
@@ -187,14 +188,16 @@ function startGame(){
     if(gameStarted) return;
 
     gameStarted = true;
-    canClick = false;
+    canReact = false;
 
     startButton.style.display = "none";
 
     reactionBox.style.display = "block";
     reactionBox.style.backgroundColor = "#e74c3c";
 
+    reactionTimeDisplay.textContent = "0";
     ratingDisplay.textContent = "";
+    statusDisplay.textContent = "⏳ Wait for GREEN...";
 
     timeout = setTimeout(() => {
 
@@ -202,31 +205,22 @@ function startGame(){
 
         startTime = Date.now();
 
-        canClick = true;
+        canReact = true;
+
+        statusDisplay.textContent = "🟢 GO!";
 
     }, Math.random() * 4000 + 2000);
 }
 
-reactionBox.addEventListener("click", function(){
+function handleReaction(){
 
-    if(!gameStarted) return;
+    if(!gameStarted || !canReact) return;
 
-    if(!canClick){
-
-        clearTimeout(timeout);
-
-        alert("❌ Too Soon! Wait until the box turns green.");
-
-        gameStarted = false;
-
-        restartButton.style.display = "inline-block";
-
-        return;
-    }
-
-    let reactionTime = Date.now() - startTime;
+    const reactionTime = Date.now() - startTime;
 
     reactionTimeDisplay.textContent = reactionTime;
+
+    statusDisplay.textContent = "";
 
     if(navigator.vibrate){
         navigator.vibrate(100);
@@ -242,7 +236,7 @@ reactionBox.addEventListener("click", function(){
     }
 
     if(reactionTime < 200){
-        ratingDisplay.textContent = "🔥 Amazing!";
+        ratingDisplay.textContent = "🔥 Amazing Reflexes!";
     }
     else if(reactionTime < 300){
         ratingDisplay.textContent = "⚡ Great!";
@@ -255,30 +249,40 @@ reactionBox.addEventListener("click", function(){
     }
 
     reactionBox.style.display = "none";
-
     restartButton.style.display = "inline-block";
 
     gameStarted = false;
-});
+}
 
 function restartGame(){
 
     clearTimeout(timeout);
 
     gameStarted = false;
-    canClick = false;
+    canReact = false;
 
     reactionBox.style.display = "none";
     reactionBox.style.backgroundColor = "#3498db";
 
     reactionTimeDisplay.textContent = "0";
-
     ratingDisplay.textContent = "";
+    statusDisplay.textContent = "";
 
     restartButton.style.display = "none";
-
     startButton.style.display = "inline-block";
 }
+
+reactionBox.addEventListener("click", handleReaction);
+
+document.addEventListener("keydown", function(event){
+
+    if(event.code === "Space"){
+
+        event.preventDefault();
+
+        handleReaction();
+    }
+});
 
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", restartGame);
